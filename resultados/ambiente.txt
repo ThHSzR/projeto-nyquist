@@ -1,0 +1,6 @@
+Linux-6.18.57-x86_64-with-glibc2.41
+CPU AMD EPYC 9V45 96-Core Processor
+Python 3.12.14
+NumPy 2.3.5
+SciPy 1.17.0
+Matplotlib 3.10.8
