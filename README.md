@@ -2,6 +2,33 @@
 
 Projeto de pesquisa aplicada da trilha de Engenharia de Computação. O núcleo é implementado em Python com NumPy. SciPy serve como referência para os ensaios, os degraus contínuos e a discretização. O controlador da bancada é escrito em C++ e tem uma versão para Arduino-ESP32 e outra para execução no computador.
 
+**Material da entrega** · [Artigo em PDF](artigo/artigo_nyquist.pdf) · [Seminário com notas de fala](seminario.pptx) · [Gráficos e dados brutos](resultados/) · [Firmware do ESP32](hil/esp32_pid/)
+
+## Resultados em uma página
+
+Em **1,35 s** de atraso, Nyquist conta dois polos instáveis na malha fechada. Padé de primeira ordem indica zero. O primeiro atraso crítico é **1,325818 s** no modelo contínuo e **1,305142 s** no modelo amostrado a 50 Hz. A diferença é de aproximadamente **20,68 ms**, calculada por subtração. Os gráficos da bancada registram execuções em software com o PID em C++. O ensaio na placa está pendente.
+
+| Caso | Polos fechados à direita | Margem de ganho | Margem de fase |
+|---|---:|---:|---:|
+| A, terceira ordem | 0 | 13,98 dB | 75,64° |
+| B, polo aberto instável | 0 | −3,52 dB em DC | 17,94° |
+| C, fase não mínima | 0 | 2,50 dB | 35,43° |
+| D, atraso de 1,35 s | 2 | −0,14 dB | −1,39° |
+
+As margens são arredondadas a partir de [validacao.csv](resultados/validacao.csv). Em B, a margem em DC representa a redução de ganho que leva à fronteira. Para D, a comparação entre as ordens 1 a 4 está em [pade.csv](resultados/pade.csv).
+
+![Comparação de Nyquist entre o atraso exato e as aproximações de Padé perto do ponto crítico](resultados/atraso_pade.png)
+
+## Onde está cada parte
+
+| Caminho | O que contém |
+|---|---|
+| [`nucleo.py`](nucleo.py) | Contorno de Nyquist, margens, tabela de Routh, lugar das raízes e aproximações de Padé. |
+| [`modelos.py`](modelos.py) e [`analisar.py`](analisar.py) | Quatro plantas de referência e interface de terminal para plantas próprias. |
+| [`experimento.py`](experimento.py) e [`tests/`](tests/) | Validação contra SciPy, benchmark nas ordens 5, 10 e 20 e testes unitários. |
+| [`bancada.py`](bancada.py), [`comparar_hil.py`](comparar_hil.py) e [`hil/`](hil/) | Planta simulada, fila de atraso, controlador C++ compartilhado e comparação de ensaios. |
+| [`artigo/`](artigo/) | Artigo em formato IEEE, PDF e fonte LaTeX. |
+
 ## 1. Preparar o ambiente
 
 Use Python 3.12 e um compilador C++ disponível como `g++`. Abra o terminal na raiz do projeto.
@@ -71,15 +98,15 @@ A pasta `resultados/` guarda a execução usada no artigo. A nova pasta `repetic
 
 | Arquivo | Leitura |
 |---|---|
-| `nyquist.png` | Ramos em frequência e ponto −1+j0. O algoritmo fecha o contorno e faz desvios no plano s. |
-| `bode.png` | Magnitude, fase e frequência de ganho unitário. A fase de D é ampliada nas frequências de interesse. |
-| `lugar_raizes.png` | Caminho dos polos com a variação de K. Em D, usa Padé [2/2]. |
-| `degrau.png` | Degraus contínuos. Em D, usa Padé [2/2]. |
-| `atraso_pade.png` | Zoom do ramo positivo de Nyquist perto do ponto crítico. |
-| `benchmark.png` | Mediana do tempo de CPU versus ordem, com eixo vertical logarítmico. |
-| `bancada.png` | Degraus da bancada em software usando a fila de atraso e o PID em C++. |
-| `validacao.csv` e `atraso_exato.csv` | Contagens, margens, polos e resíduos. A coluna de Routh em D usa Padé [2/2]. |
-| `benchmark.csv` | Mediana, percentil 90, erro direto dos polos, resíduo e diferença float32/float64. |
+| [`nyquist.png`](resultados/nyquist.png) | Ramos em frequência e ponto −1+j0. O algoritmo fecha o contorno e faz desvios no plano s. |
+| [`bode.png`](resultados/bode.png) | Magnitude, fase e frequência de ganho unitário. A fase de D é ampliada nas frequências de interesse. |
+| [`lugar_raizes.png`](resultados/lugar_raizes.png) | Caminho dos polos com a variação de K. Em D, usa Padé [2/2]. |
+| [`degrau.png`](resultados/degrau.png) | Degraus contínuos. Em D, usa Padé [2/2]. |
+| [`atraso_pade.png`](resultados/atraso_pade.png) | Zoom do ramo positivo de Nyquist perto do ponto crítico. |
+| [`benchmark.png`](resultados/benchmark.png) | Mediana do tempo de CPU versus ordem, com eixo vertical logarítmico. |
+| [`bancada.png`](resultados/bancada.png) | Degraus da bancada em software usando a fila de atraso e o PID em C++. |
+| [`validacao.csv`](resultados/validacao.csv) e [`atraso_exato.csv`](resultados/atraso_exato.csv) | Contagens, margens, polos e resíduos. A coluna de Routh em D usa Padé [2/2]. |
+| [`benchmark.csv`](resultados/benchmark.csv) | Mediana, percentil 90, erro direto dos polos, resíduo e diferença float32/float64. |
 
 **Limites do programa.** Os casos próximos do ponto crítico podem retornar fronteira ou inconclusivo, de acordo com a tolerância numérica. O módulo de margens retorna cruzamentos na faixa de 0,0001 a 100 rad/s, mais o limite de fase em DC quando aplicável. Um cruzamento tangencial com atraso pode escapar à varredura por troca de sinal. A conexão de ramos do lugar das raízes por proximidade pode ser ambígua em raízes coincidentes.
 
